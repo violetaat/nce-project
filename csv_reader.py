@@ -1,19 +1,29 @@
 import csv
 
-allReviews= []
 
-numberStop = 100
-i = 0
+def getReviewsFromCsvFile(path):
+    try:
+        reviews = []
+        with open(path, 'r') as csvfile:
+            reader = csv.DictReader(csvfile)
 
-with open("DB/Hotel_Reviews.csv", 'r') as csvfile:
-    reader = csv.DictReader(csvfile)
-    for row in reader:
-        # TODO: Remove for production
-        i+=1
-        if(i > numberStop):
-            break
-        # ------
+            numberStop = 100
+            i = 0
+            for row in reader:
+                # TODO: Remove for production
+                i+=1
+                if(i > numberStop):
+                    break
+                # ------
 
-        allReviews.append(dict(row))
+                reviews.append(dict(row))
 
-csvfile.close()
+        csvfile.close()
+        return reviews
+    except Exception as exp:
+        print("Error opening and reading '" + path + "'" + " : " + exp.args[0])
+        return None
+
+
+if __name__ == "__main__":
+    reviews = getReviewsFromCsvFile("DB/Hotel_Reviews.csv")

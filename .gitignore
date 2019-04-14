@@ -104,3 +104,6 @@ venv.bak/
 .mypy_cache/
 
 DB/*
+
+# VS Code runner temp file
+tempCodeRunnerFile.py

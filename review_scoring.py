@@ -1,9 +1,5 @@
-import csv_reader
 import re
 import operator
-import pprint
-
-pp = pprint.PrettyPrinter(indent=4)
 
 positiveReveiwTag = "Positive_Review"
 negativeReveiwTag = "Negative_Review"
@@ -11,26 +7,47 @@ reviewerScoreTag = "Reviewer_Score"
 positiveReviewThreshHold = "7"
 
 
-def getSortedWordOccurenceDict(tag, dbObject):
-    reviewText =  dbObject[tag].split(" ")
-    wordsInPositiveReview =  list(filter(None, reviewText))
+def getSortedWordOccurenceDict(tag, reviews):
+    positiveOccurencesDict = {}
+    negativeOccurencesDict = {}
+    for dbObject in reviews:
+        if (dbObject[reviewerScoreTag] > positiveReviewThreshHold):
+            reviewText = dbObject[tag].split(" ")
+            wordsInPositiveReview = list(filter(None, reviewText))
 
-    occurencesDict = { }
-    for word in wordsInPositiveReview:
-        occurencesDict.update({ word : reviewText.count(word) })
+            for word in wordsInPositiveReview:
+                key = word.lower()
+                oldValue = positiveOccurencesDict.get(key)
+                occurences = 0 if oldValue == None else oldValue
+                positiveOccurencesDict.update(
+                    {key: occurences + reviewText.count(word)})
+        else:
+            reviewText = dbObject[tag].split(" ")
+            wordsInNegativeReview = list(filter(None, reviewText))
 
-    return sorted(occurencesDict.items(), key=operator.itemgetter(1), reverse=True)
+            for word in wordsInNegativeReview:
+                key = word.lower()
+                oldValue = negativeOccurencesDict.get(key)
+                occurences = 0 if oldValue == None else oldValue
+                negativeOccurencesDict.update(
+                    {key: occurences + reviewText.count(word)})
 
-positiveReviewWordList = []
-negativeReviewWordList = []
-for dbObject in csv_reader.allReviews:
-    if (dbObject[reviewerScoreTag] > positiveReviewThreshHold):
-        positiveReviewWordList.append(getSortedWordOccurenceDict(positiveReveiwTag, dbObject))
+    return sorted(positiveOccurencesDict.items(), key=operator.itemgetter(1), reverse=True), sorted(negativeOccurencesDict.items(), key=operator.itemgetter(1), reverse=True)
+
+def makeIsLongerThan(lengthOfWord):
+    def isLongerThan(x):
+        if len(x) <= lengthOfWord:
+            return False
+        else:
+            return True
+    return isLongerThan
+
+def getTopPositiveNegativeTupple(size, reviews, resultWordLen):
+    filterFunc = makeIsLongerThan(3 if resultWordLen == None else resultWordLen)
+    positiveReviewWordList, negativeReviewWordList = getSortedWordOccurenceDict(
+        positiveReveiwTag, reviews)
+
+    if (size != None):
+        return list(filter(filterFunc, list(d[0] for d in positiveReviewWordList)))[:size],  list(filter(filterFunc, list(d[0] for d in negativeReviewWordList)))[:size]
     else:
-        negativeReviewWordList.append(getSortedWordOccurenceDict(negativeReveiwTag, dbObject))
-
-# print(sortedDict)
-
-
-
-pp.pprint(len(negativeReviewWordList))
+        return list(filter(filterFunc, list(d[0] for d in positiveReviewWordList))),  list(filter(filterFunc, list(d[0] for d in negativeReviewWordList)))
